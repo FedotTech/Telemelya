@@ -1,0 +1,17 @@
+name: Bot Tests
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-client.txt
+      - run: behave tests/features/
+        env:
+          MOCK_SERVER_URL: ${{ secrets.MOCK_SERVER_URL }}
+          API_KEY: ${{ secrets.API_KEY }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}

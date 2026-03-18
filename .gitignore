@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment
+.env
+
+# Testing
+allure-results/
+.behave/
+htmlcov/
+.coverage
+
+# Docker
+docker-compose.override.yml
+
+# MinIO data
+minio_data/
+
+# OS
+.DS_Store
+Thumbs.db
