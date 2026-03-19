@@ -632,25 +632,45 @@ jobs:
 
 ## Установка
 
-### Только mock-сервер
-
-```bash
-pip install telemelya
-```
-
-### Тестовый клиент + BDD
-
-```bash
-pip install telemelya[client]
-```
+Telemelya состоит из нескольких компонентов, которые устанавливаются отдельно в зависимости от вашей роли:
 
 ### Адаптер для aiogram
+
+Для разработчиков ботов — `TemelyaRunner`, `create_bot`. Позволяет запускать бот с Telemelya или с реальным Telegram без изменения кода. Не включает сервер и тестовый клиент.
 
 ```bash
 pip install telemelya[aiogram]
 ```
 
+### Тестовый клиент + BDD
+
+Для QA и тестировщиков — `TelegramTestClient`, `ResponseCollector`, behave-шаги. Не включает сервер и адаптер для aiogram.
+
+```bash
+pip install telemelya[client]
+```
+
 ### Всё для разработки
+
+Все компоненты + pytest, allure. Для разработки самого Telemelya или полного цикла «написать бота + протестировать».
+
+```bash
+pip install telemelya[dev]
+```
+
+### Только mock-сервер
+
+Серверная часть — для запуска mock Telegram Bot API **без Docker**. Требует внешние Redis и MinIO.
+Используйте, если хотите развернуть сервер вручную (на VPS, в CI/CD и т.д.).
+
+```bash
+pip install telemelya
+
+# Запуск (Redis и MinIO должны быть доступны):
+REDIS_URL=redis://localhost:6379/0 MINIO_ENDPOINT=localhost:9000 telemelya-server
+```
+
+> **Большинству пользователей** Docker-образ удобнее: `docker pull ghcr.io/fedottech/telemelya:main` — он уже включает сервер, достаточно поднять Redis и MinIO через `docker-compose`.
 
 ```bash
 pip install telemelya[dev]
