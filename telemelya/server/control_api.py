@@ -6,7 +6,7 @@ import time
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import Response
 
 from telemelya.models import SendUpdateRequest, TelegramApiResponse
@@ -107,6 +107,16 @@ async def send_update(
     await state_manager.map_chat_to_session(req.chat_id, session_id)
 
     delivery = await deliver_update(bot_token, update)
+
+    if not delivery.get("delivered"):
+        raise HTTPException(
+            status_code=424,
+            detail={
+                "error": delivery.get("error", "Webhook delivery failed"),
+                "hint": "Make sure the bot is running and has called setWebhook on the mock server.",
+                "bot_token": bot_token,
+            },
+        )
 
     return {
         "ok": True,

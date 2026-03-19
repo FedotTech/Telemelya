@@ -7,7 +7,8 @@ import time
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, Request, UploadFile
+from fastapi import APIRouter, Request
+from starlette.datastructures import UploadFile
 
 from telemelya.models import TelegramApiResponse, PhotoSize, WebhookInfo
 from telemelya.server.state import state_manager
@@ -207,7 +208,7 @@ async def send_photo(token: str, request: Request):
 async def get_file(token: str, request: Request):
     body = await _parse_body(request)
     file_id = body.get("file_id", "")
-    session_id = _extract_session_id(request)
+    session_id = await _extract_session_id(request)
 
     media_metas = await state_manager.get_media_meta(session_id)
     for meta in media_metas:

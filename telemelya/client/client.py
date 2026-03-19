@@ -40,6 +40,21 @@ class TelegramTestClient:
     def __exit__(self, *args):
         self.close()
 
+    def _raise_for_status(self, resp: httpx.Response) -> None:
+        """Raise with a descriptive message on error responses."""
+        if resp.is_success:
+            return
+        try:
+            detail = resp.json().get("detail", {})
+            msg = detail.get("error", resp.text) if isinstance(detail, dict) else str(detail)
+        except Exception:
+            msg = resp.text
+        raise httpx.HTTPStatusError(
+            f"{resp.status_code}: {msg}",
+            request=resp.request,
+            response=resp,
+        )
+
     def send_message(self, chat_id: int, text: str) -> dict:
         """Send a text message update to the bot."""
         resp = self._client.post(
@@ -47,7 +62,7 @@ class TelegramTestClient:
             params={"bot_token": self.bot_token},
             json={"chat_id": chat_id, "text": text},
         )
-        resp.raise_for_status()
+        self._raise_for_status(resp)
         return resp.json()
 
     def send_command(self, chat_id: int, command: str) -> dict:
@@ -57,7 +72,7 @@ class TelegramTestClient:
             params={"bot_token": self.bot_token},
             json={"chat_id": chat_id, "command": command},
         )
-        resp.raise_for_status()
+        self._raise_for_status(resp)
         return resp.json()
 
     def send_photo(
@@ -77,7 +92,7 @@ class TelegramTestClient:
             params={"bot_token": self.bot_token},
             json=payload,
         )
-        resp.raise_for_status()
+        self._raise_for_status(resp)
         return resp.json()
 
     def send_callback_query(
@@ -93,7 +108,7 @@ class TelegramTestClient:
                 "callback_message_id": message_id,
             },
         )
-        resp.raise_for_status()
+        self._raise_for_status(resp)
         return resp.json()
 
     def get_responses(self) -> list[dict]:

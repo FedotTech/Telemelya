@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "telemelya"
-version = "0.1.1"
+version = "0.1.2"
 description = "Mock Telegram Bot API for BDD testing"
 readme = "README.md"
 license = {text = "MIT"}
@@ -74,4 +74,4 @@ Documentation = "https://github.com/FedotTech/Telemelya#readme"
 include = ["telemelya*"]
 
 [tool.behave]
-paths = ["tests/features"]
+paths = ["telemelya/tests/features"]
