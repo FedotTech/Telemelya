@@ -12,6 +12,16 @@ requires-python = ">=3.11"
 authors = [
     {name = "FedotTech"},
 ]
+keywords = [
+    "telegram",
+    "bot",
+    "testing",
+    "mock",
+    "bdd",
+    "aiogram",
+    "behave",
+    "gherkin",
+]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Framework :: FastAPI",
@@ -22,6 +32,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Software Development :: Testing",
 ]
+
 dependencies = [
     "fastapi>=0.110.0",
     "uvicorn[standard]>=0.27.0",
@@ -52,6 +63,12 @@ dev = [
 
 [project.scripts]
 telemelya-server = "telemelya.server.app:main"
+
+[project.urls]
+Homepage = "https://github.com/FedotTech/Telemelya"
+Repository = "https://github.com/FedotTech/Telemelya"
+Issues = "https://github.com/FedotTech/Telemelya/issues"
+Documentation = "https://github.com/FedotTech/Telemelya#readme"
 
 [tool.setuptools.packages.find]
 include = ["telemelya*"]
