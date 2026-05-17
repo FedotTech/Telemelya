@@ -1,4 +1,4 @@
-"""Tests for Bot API recording endpoints: sendMessage, sendPhoto, editMessageText, answerCallbackQuery."""
+"""Tests for Bot API recording endpoints: sendMessage, sendPhoto, editMessageText, deleteMessage, answerCallbackQuery."""
 
 import pytest
 
@@ -161,6 +161,60 @@ class TestEditMessageText:
         )
         responses = resp.json()["responses"]
         assert any(r["method"] == "editMessageText" for r in responses)
+
+
+class TestDeleteMessage:
+    """POST /bot{token}/deleteMessage."""
+
+    def test_delete_message(self, http, bot_token, headers, session_id):
+        resp = http.post(
+            f"/bot{bot_token}/deleteMessage",
+            headers=headers,
+            json={"chat_id": 12345, "message_id": 1},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["ok"] is True
+        assert resp.json()["result"] is True
+
+    def test_delete_recorded(self, http, bot_token, headers, session_id):
+        http.post(
+            f"/bot{bot_token}/deleteMessage",
+            headers=headers,
+            json={"chat_id": 12345, "message_id": 42},
+        )
+        resp = http.get(
+            "/api/v1/test/responses",
+            headers=headers,
+            params={"session_id": session_id},
+        )
+        responses = resp.json()["responses"]
+        assert any(
+            r["method"] == "deleteMessage"
+            and r["message_id"] == 42
+            and r["chat_id"] == 12345
+            for r in responses
+        )
+
+    def test_delete_message_string_ids(self, http, bot_token, headers, session_id):
+        resp = http.post(
+            f"/bot{bot_token}/deleteMessage",
+            headers=headers,
+            json={"chat_id": "12345", "message_id": "7"},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["result"] is True
+
+        responses = http.get(
+            "/api/v1/test/responses",
+            headers=headers,
+            params={"session_id": session_id},
+        ).json()["responses"]
+        assert any(
+            r["method"] == "deleteMessage"
+            and r["chat_id"] == 12345
+            and r["message_id"] == 7
+            for r in responses
+        )
 
 
 class TestAnswerCallbackQuery:

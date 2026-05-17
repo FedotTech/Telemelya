@@ -279,3 +279,27 @@ async def edit_message_text(token: str, request: Request):
         "text": body.get("text", ""),
     }
     return TelegramApiResponse(ok=True, result=result)
+
+
+@router.post("/bot{token}/deleteMessage")
+async def delete_message(token: str, request: Request):
+    body = await _parse_body(request)
+    chat_id = body.get("chat_id")
+    if isinstance(chat_id, str):
+        chat_id = int(chat_id)
+
+    message_id = body.get("message_id")
+    if isinstance(message_id, str):
+        message_id = int(message_id)
+
+    session_id = await _extract_session_id(request, chat_id)
+
+    response_record = {
+        "method": "deleteMessage",
+        "chat_id": chat_id,
+        "message_id": message_id,
+        "raw": body,
+    }
+    await state_manager.push_response(session_id, response_record)
+
+    return TelegramApiResponse(ok=True, result=True)

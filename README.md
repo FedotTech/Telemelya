@@ -107,6 +107,7 @@
 | GET | `/bot{token}/file/{file_path}` | Скачивание файла |
 | POST | `/bot{token}/answerCallbackQuery` | Ответ на callback-запрос |
 | POST | `/bot{token}/editMessageText` | Редактирование сообщения |
+| POST | `/bot{token}/deleteMessage` | Удаление сообщения |
 
 ### Control API (`/api/v1/test/...`)
 
