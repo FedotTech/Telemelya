@@ -31,6 +31,7 @@ class TestAuthNotRequired:
         "/bot123:token/sendMessage",
         "/bot123:token/sendPhoto",
         "/bot123:token/editMessageText",
+        "/bot123:token/deleteMessage",
         "/bot123:token/answerCallbackQuery",
     ]
 
