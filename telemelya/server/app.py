@@ -35,7 +35,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Telemelya — Mock Telegram Bot API",
-    version="0.1.0",
+    version="0.1.3",
     lifespan=lifespan,
 )
 
@@ -47,7 +47,7 @@ app.include_router(control_api_router)
 async def root():
     return {
         "service": "Telemelya",
-        "version": "0.1.0",
+        "version": "0.1.3",
         "description": "Mock Telegram Bot API for BDD testing",
     }
 
