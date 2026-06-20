@@ -422,6 +422,24 @@ async def delete_message(token: str, request: Request):
     return TelegramApiResponse(ok=True, result=True)
 
 
+@router.post("/bot{token}/sendChatAction")
+async def send_chat_action(token: str, request: Request):
+    """Chat action ("typing"/"upload_photo" и т.п.) — возвращает bool, как в Telegram."""
+    body = await _parse_body(request)
+    chat_id = _as_int(body.get("chat_id"))
+    session_id = await _extract_session_id(request, chat_id)
+
+    response_record = {
+        "method": "sendChatAction",
+        "chat_id": chat_id,
+        "action": body.get("action"),
+        "raw": body,
+    }
+    await state_manager.push_response(session_id, response_record)
+
+    return TelegramApiResponse(ok=True, result=True)
+
+
 @router.post("/bot{token}/answerInlineQuery")
 async def answer_inline_query(token: str, request: Request):
     body = await _parse_body(request)
