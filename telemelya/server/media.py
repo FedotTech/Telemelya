@@ -6,6 +6,7 @@ import io
 from typing import Optional
 
 from aiobotocore.session import get_session
+from botocore.config import Config
 
 from telemelya.server.config import settings
 
@@ -27,6 +28,12 @@ class MediaManager:
             aws_access_key_id=settings.minio_access_key,
             aws_secret_access_key=settings.minio_secret_key,
             region_name="us-east-1",
+            # Новый дефолт botocore (>=1.36) добавляет CRC32-checksum, который
+            # GCS S3-interop / MinIO отвергают → SignatureDoesNotMatch на PutObject.
+            config=Config(
+                request_checksum_calculation="when_required",
+                response_checksum_validation="when_required",
+            ),
         )
         self._client = await self._client_ctx.__aenter__()
         await self._ensure_bucket()
