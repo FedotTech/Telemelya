@@ -39,3 +39,9 @@ minio_data/
 .DS_Store
 Thumbs.db
 uv.lock
+
+# Tooling artifacts
+.repomixignore
+repomix-output.xml
+.serena/
+docs/architecture/
