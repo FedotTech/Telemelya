@@ -75,11 +75,30 @@ class TelegramTestClient:
         self._raise_for_status(resp)
         return resp.json()
 
+    def upload_media(self, file_path: str) -> str:
+        """Upload media bytes to the mock server; returns the file_id."""
+        import os
+
+        with open(file_path, "rb") as fh:
+            data = fh.read()
+        filename = os.path.basename(file_path) or "upload.bin"
+        resp = self._client.post(
+            "/api/v1/test/upload_media",
+            params={"session_id": self.session_id},
+            files={"file": (filename, data, "image/jpeg")},
+        )
+        self._raise_for_status(resp)
+        return resp.json()["file_id"]
+
     def send_photo(
         self, chat_id: int, photo_path: str, caption: Optional[str] = None
     ) -> dict:
-        """Send a photo update to the bot (simulated via file_id)."""
-        photo_file_id = str(uuid.uuid4())
+        """Send a photo update to the bot, delivering real image bytes.
+
+        The file is uploaded to the mock server first so the bot's
+        getFile/download_file calls return the actual bytes.
+        """
+        photo_file_id = self.upload_media(photo_path)
         payload: dict = {
             "chat_id": chat_id,
             "photo_file_id": photo_file_id,
@@ -89,6 +108,55 @@ class TelegramTestClient:
 
         resp = self._client.post(
             "/api/v1/test/send_update",
+            params={"bot_token": self.bot_token},
+            json=payload,
+        )
+        self._raise_for_status(resp)
+        return resp.json()
+
+    def send_inline_query(
+        self,
+        query: str,
+        from_user: Optional[dict] = None,
+        chat_id: Optional[int] = None,
+        offset: str = "",
+    ) -> dict:
+        """Emulate an inline query update; returns the inline_query_id."""
+        payload: dict = {"query": query, "offset": offset}
+        if from_user:
+            payload["from_user"] = from_user
+        if chat_id is not None:
+            payload["chat_id"] = chat_id
+        resp = self._client.post(
+            "/api/v1/test/send_inline_query",
+            params={"bot_token": self.bot_token},
+            json=payload,
+        )
+        self._raise_for_status(resp)
+        return resp.json()
+
+    def choose_inline_result(
+        self,
+        chat_id: int,
+        *,
+        inline_query_id: Optional[str] = None,
+        result_id: Optional[str] = None,
+        result_index: Optional[int] = None,
+        from_user: Optional[dict] = None,
+        deliver_update: bool = False,
+    ) -> dict:
+        """Emulate the user choosing an inline result."""
+        payload: dict = {"chat_id": chat_id, "deliver_update": deliver_update}
+        if inline_query_id is not None:
+            payload["inline_query_id"] = inline_query_id
+        if result_id is not None:
+            payload["result_id"] = result_id
+        if result_index is not None:
+            payload["result_index"] = result_index
+        if from_user:
+            payload["from_user"] = from_user
+        resp = self._client.post(
+            "/api/v1/test/choose_inline_result",
             params={"bot_token": self.bot_token},
             json=payload,
         )

@@ -87,6 +87,7 @@
 | `MINIO_BUCKET` | `test-media` | Имя бакета MinIO |
 | `MINIO_USE_SSL` | `false` | Использовать SSL для MinIO |
 | `AUTH_KEYS` | `` | API-ключи через запятую |
+| `STRICT_EDIT` | `false` | Если `true`, `editMessage*` на неизвестный `message_id` возвращает `ok:false` вместо синтетического `Message` (по умолчанию — мягкий фолбэк с warning) |
 
 ---
 
@@ -105,9 +106,13 @@
 | POST | `/bot{token}/sendPhoto` | Отправка фото |
 | POST | `/bot{token}/getFile` | Получение информации о файле |
 | GET | `/bot{token}/file/{file_path}` | Скачивание файла |
-| POST | `/bot{token}/answerCallbackQuery` | Ответ на callback-запрос |
-| POST | `/bot{token}/editMessageText` | Редактирование сообщения |
+| POST | `/bot{token}/answerCallbackQuery` | Ответ на callback-запрос (text, show_alert) |
+| POST | `/bot{token}/answerInlineQuery` | Ответ на inline-запрос (результаты) |
+| POST | `/bot{token}/editMessageText` | Редактирование текста сообщения |
+| POST | `/bot{token}/editMessageReplyMarkup` | Редактирование инлайн-клавиатуры |
+| POST | `/bot{token}/editMessageCaption` | Редактирование подписи |
 | POST | `/bot{token}/deleteMessage` | Удаление сообщения |
+| GET | `/file/bot{token}/{file_path}` | Скачивание файла (формат URL реального Telegram) |
 
 ### Control API (`/api/v1/test/...`)
 
@@ -116,6 +121,9 @@
 | Метод | Эндпоинт | Описание |
 |---|---|---|
 | POST | `/api/v1/test/send_update?bot_token=...` | Отправить обновление боту |
+| POST | `/api/v1/test/send_inline_query?bot_token=...` | Отправить inline-запрос боту |
+| POST | `/api/v1/test/choose_inline_result?bot_token=...` | Эмулировать выбор inline-результата |
+| POST | `/api/v1/test/upload_media?session_id=...` | Загрузить байты медиа (для send_photo) |
 | GET | `/api/v1/test/responses?session_id=...` | Получить ответы бота |
 | GET | `/api/v1/test/responses/wait?session_id=...&timeout=5` | Ожидание ответа (long-poll) |
 | POST | `/api/v1/test/reset?session_id=...` | Сброс состояния сессии |
@@ -154,8 +162,11 @@ client.close()
 |---|---|
 | `send_message(chat_id, text)` | Отправить текстовое сообщение |
 | `send_command(chat_id, command)` | Отправить команду (например, `/start`) |
-| `send_photo(chat_id, photo_path, caption=)` | Отправить фото |
+| `send_photo(chat_id, photo_path, caption=)` | Отправить фото (загружает реальные байты) |
 | `send_callback_query(chat_id, data, message_id)` | Отправить callback-запрос |
+| `send_inline_query(query, from_user=, chat_id=)` | Отправить inline-запрос; возвращает `inline_query_id` |
+| `choose_inline_result(chat_id, inline_query_id=, result_id=, result_index=, deliver_update=)` | Эмулировать выбор inline-результата |
+| `upload_media(file_path)` | Загрузить байты медиа; возвращает `file_id` |
 | `get_responses()` | Получить все ответы бота |
 | `wait_for_response(timeout=5.0)` | Дождаться ответа (long-poll) |
 | `get_media(file_id)` | Скачать медиафайл |
@@ -170,8 +181,12 @@ client.close()
 | `assert_text(expected)` | Проверить точное совпадение текста |
 | `assert_contains(substring)` | Проверить наличие подстроки |
 | `assert_photo()` | Проверить, что ответ содержит фото |
-| `assert_reply_markup()` | Проверить наличие клавиатуры |
+| `assert_reply_markup(buttons)` | Проверить наличие клавиатуры с заданными кнопками |
+| `assert_callback_answered(text=, show_alert=)` | Проверить `answerCallbackQuery` (тост/алерт) |
+| `assert_inline_answered(min_results=)` | Проверить `answerInlineQuery` |
+| `find_response(method=, contains=, has_button=)` | Найти запись по методу/тексту/кнопке (с её `message_id`) |
 | `last` | Последний полученный ответ |
+| `last_message_id` | `message_id` последнего ответа (для адресации правок/callback) |
 
 ---
 

@@ -22,6 +22,11 @@ class Settings(BaseSettings):
     # Auth
     auth_keys: str = ""
 
+    # Behaviour flags
+    # When True, edit* methods on an unknown message_id return ok:false
+    # instead of a synthetic Message. Off by default for backwards compat.
+    strict_edit: bool = False
+
     @property
     def auth_keys_set(self) -> set[str]:
         if not self.auth_keys:

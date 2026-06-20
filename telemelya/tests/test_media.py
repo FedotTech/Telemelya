@@ -88,6 +88,69 @@ class TestFileDownload:
         assert resp.content == photo_content
 
 
+class TestUploadMedia:
+    """POST /api/v1/test/upload_media — pre-upload real bytes for a photo update."""
+
+    def test_upload_returns_file_id(self, http, headers, session_id):
+        data = b"\x89PNG\r\n\x1a\n" + b"realbytes" * 10
+        resp = http.post(
+            "/api/v1/test/upload_media",
+            headers=headers,
+            params={"session_id": session_id},
+            files={"file": ("pic.png", data, "image/png")},
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["ok"] is True
+        assert body["file_id"]
+        assert body["size"] == len(data)
+
+    def test_getfile_resolves_without_session_header(self, http, bot_token, headers, session_id):
+        """Acceptance #4: the bot calls getFile with NO session header; the
+        global file map must still resolve it and download must return bytes."""
+        content = b"vision-image-bytes-" + uuid.uuid4().bytes
+        file_id = http.post(
+            "/api/v1/test/upload_media",
+            headers=headers,
+            params={"session_id": session_id},
+            files={"file": ("photo.jpg", content, "image/jpeg")},
+        ).json()["file_id"]
+
+        # getFile WITHOUT X-Test-Session (simulates the real bot) — auth header
+        # alone, no session. Bot API endpoints are not auth-gated.
+        resp = http.post(
+            f"/bot{bot_token}/getFile",
+            json={"file_id": file_id},
+        )
+        data = resp.json()
+        assert data["ok"] is True, f"getFile failed: {data}"
+        file_path = data["result"]["file_path"]
+        assert session_id in file_path
+
+        # Download via the bot's file endpoint — bytes must match.
+        dl = http.get(f"/bot{bot_token}/file/{file_path}")
+        assert dl.status_code == 200
+        assert dl.content == content
+
+    def test_telegram_style_file_url(self, http, bot_token, headers, session_id):
+        """aiogram downloads from /file/bot{token}/{path} (real Telegram layout)."""
+        content = b"telegram-layout-" + uuid.uuid4().bytes
+        file_id = http.post(
+            "/api/v1/test/upload_media",
+            headers=headers,
+            params={"session_id": session_id},
+            files={"file": ("p.jpg", content, "image/jpeg")},
+        ).json()["file_id"]
+        file_path = http.post(
+            f"/bot{bot_token}/getFile",
+            json={"file_id": file_id},
+        ).json()["result"]["file_path"]
+
+        dl = http.get(f"/file/bot{bot_token}/{file_path}")
+        assert dl.status_code == 200
+        assert dl.content == content
+
+
 class TestMediaInSession:
     """GET /api/v1/test/media/{file_id} — control API media download."""
 
