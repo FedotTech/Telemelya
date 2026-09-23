@@ -84,6 +84,19 @@ def _as_int(value, default=None):
     return default
 
 
+def _for_bot(message: dict) -> dict:
+    """Message в ответе боту: как в Telegram, reply_markup бывает только inline.
+
+    ReplyKeyboardMarkup/ReplyKeyboardRemove/ForceReply Telegram в Message не возвращает;
+    aiogram валидирует Message.reply_markup как InlineKeyboardMarkup и падает на
+    {'keyboard': ...}. Сохранённое сообщение и записи ответов для тестов не меняются.
+    """
+    markup = message.get("reply_markup")
+    if isinstance(markup, dict) and "inline_keyboard" not in markup:
+        return {k: v for k, v in message.items() if k != "reply_markup"}
+    return message
+
+
 @router.post("/bot{token}/getMe")
 async def get_me(token: str):
     return TelegramApiResponse(ok=True, result=DEFAULT_BOT_INFO)
@@ -148,7 +161,7 @@ async def send_message(token: str, request: Request):
     }
     await state_manager.push_response(session_id, response_record)
 
-    return TelegramApiResponse(ok=True, result=result)
+    return TelegramApiResponse(ok=True, result=_for_bot(result))
 
 
 @router.post("/bot{token}/sendPhoto")
@@ -230,7 +243,7 @@ async def send_photo(token: str, request: Request):
     }
     await state_manager.push_response(session_id, response_record)
 
-    return TelegramApiResponse(ok=True, result=result)
+    return TelegramApiResponse(ok=True, result=_for_bot(result))
 
 
 @router.post("/bot{token}/getFile")
@@ -385,7 +398,7 @@ async def _apply_edit(request: Request, method: str) -> TelegramApiResponse:
     }
     await state_manager.push_response(session_id, response_record)
 
-    return TelegramApiResponse(ok=True, result=stored)
+    return TelegramApiResponse(ok=True, result=_for_bot(stored))
 
 
 @router.post("/bot{token}/editMessageText")
