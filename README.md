@@ -160,9 +160,9 @@ client.close()
 
 | Метод | Описание |
 |---|---|
-| `send_message(chat_id, text)` | Отправить текстовое сообщение |
+| `send_message(chat_id, text, reply_to_message_id=)` | Отправить текстовое сообщение; `reply_to_message_id` — `message_id` ответа бота из `get_responses()`, на который пользователь отвечает (в update появится `message.reply_to_message`; не найдено в сессии/чате — 404) |
 | `send_command(chat_id, command)` | Отправить команду (например, `/start`) |
-| `send_photo(chat_id, photo_path, caption=)` | Отправить фото (загружает реальные байты) |
+| `send_photo(chat_id, photo_path, caption=, reply_to_message_id=)` | Отправить фото (загружает реальные байты); `reply_to_message_id` — как у `send_message` |
 | `send_callback_query(chat_id, data, message_id)` | Отправить callback-запрос |
 | `send_inline_query(query, from_user=, chat_id=)` | Отправить inline-запрос; возвращает `inline_query_id` |
 | `choose_inline_result(chat_id, inline_query_id=, result_id=, result_index=, deliver_update=)` | Эмулировать выбор inline-результата |

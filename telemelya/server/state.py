@@ -6,6 +6,9 @@ import json
 from typing import Optional
 
 import redis.asyncio as redis
+from redis.asyncio.retry import Retry
+from redis.backoff import ExponentialBackoff
+from redis.exceptions import ConnectionError as RedisConnectionError
 
 from telemelya.server.config import settings
 
@@ -22,8 +25,15 @@ class StateManager:
         self._redis: Optional[redis.Redis] = None
 
     async def connect(self) -> None:
+        # from_url по умолчанию не повторяет команды (Retry(NoBackoff(), 0)):
+        # после рестарта Redis первый запрос попадал на мёртвое соединение из
+        # пула и отдавал 500. Повтор на ConnectionError переподключается.
         self._redis = redis.from_url(
-            settings.redis_url, decode_responses=True
+            settings.redis_url,
+            decode_responses=True,
+            retry=Retry(
+                ExponentialBackoff(), 3, supported_errors=(RedisConnectionError,)
+            ),
         )
 
     async def close(self) -> None:
