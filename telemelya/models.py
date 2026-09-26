@@ -170,6 +170,8 @@ class SendUpdateRequest(BaseModel):
     callback_data: Optional[str] = None
     callback_message_id: Optional[int] = None
     from_user: Optional[User] = None
+    # message_id сообщения бота (из /responses этой сессии), на которое отвечает пользователь
+    reply_to_message_id: Optional[int] = None
 
 
 class InlineQueryRequest(BaseModel):

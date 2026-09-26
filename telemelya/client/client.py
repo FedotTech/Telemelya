@@ -55,12 +55,21 @@ class TelegramTestClient:
             response=resp,
         )
 
-    def send_message(self, chat_id: int, text: str) -> dict:
-        """Send a text message update to the bot."""
+    def send_message(
+        self, chat_id: int, text: str, reply_to_message_id: Optional[int] = None
+    ) -> dict:
+        """Send a text message update to the bot.
+
+        reply_to_message_id — message_id of a bot response (see get_responses)
+        to reply to; the update then carries message.reply_to_message.
+        """
+        payload: dict = {"chat_id": chat_id, "text": text}
+        if reply_to_message_id is not None:
+            payload["reply_to_message_id"] = reply_to_message_id
         resp = self._client.post(
             "/api/v1/test/send_update",
             params={"bot_token": self.bot_token},
-            json={"chat_id": chat_id, "text": text},
+            json=payload,
         )
         self._raise_for_status(resp)
         return resp.json()
@@ -91,7 +100,11 @@ class TelegramTestClient:
         return resp.json()["file_id"]
 
     def send_photo(
-        self, chat_id: int, photo_path: str, caption: Optional[str] = None
+        self,
+        chat_id: int,
+        photo_path: str,
+        caption: Optional[str] = None,
+        reply_to_message_id: Optional[int] = None,
     ) -> dict:
         """Send a photo update to the bot, delivering real image bytes.
 
@@ -105,6 +118,8 @@ class TelegramTestClient:
         }
         if caption:
             payload["photo_caption"] = caption
+        if reply_to_message_id is not None:
+            payload["reply_to_message_id"] = reply_to_message_id
 
         resp = self._client.post(
             "/api/v1/test/send_update",

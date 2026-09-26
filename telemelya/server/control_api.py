@@ -16,6 +16,7 @@ from telemelya.models import (
     TelegramApiResponse,
 )
 from telemelya.server.auth import require_api_key
+from telemelya.server.bot_api import _for_bot
 from telemelya.server.state import state_manager
 from telemelya.server.media import media_manager
 from telemelya.server.webhook import deliver_update
@@ -107,6 +108,20 @@ async def send_update(
     )
 
     update = _make_update(req, session_id)
+
+    if req.reply_to_message_id is not None and "message" in update:
+        replied = await state_manager.get_message(session_id, req.reply_to_message_id)
+        if not replied or (replied.get("chat") or {}).get("id") != req.chat_id:
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "error": f"Message {req.reply_to_message_id} not found "
+                    f"in session {session_id!r}, chat {req.chat_id}",
+                    "hint": "reply_to_message_id must be a message_id of a bot "
+                    "message from /responses of the same session and chat.",
+                },
+            )
+        update["message"]["reply_to_message"] = _for_bot(replied)
 
     # Map chat_id → session_id so bot's API calls are tracked
     await state_manager.map_chat_to_session(req.chat_id, session_id)

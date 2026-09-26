@@ -153,3 +153,94 @@ class TestSendUpdateCommandGeneration:
             },
         )
         assert resp.status_code == 424  # no webhook
+
+
+class TestSendUpdateReplyToMessage:
+    """reply_to_message_id: update carries message.reply_to_message of a bot message."""
+
+    TOKEN = "reply-test-token"
+
+    @pytest.fixture(autouse=True)
+    def _self_webhook(self, http):
+        # Webhook на собственный getMe сервера: доставка успешна без живого бота.
+        http.post(
+            f"/bot{self.TOKEN}/setWebhook",
+            json={"url": f"http://127.0.0.1:8080/bot{self.TOKEN}/getMe"},
+        )
+        yield
+        http.post(f"/bot{self.TOKEN}/deleteWebhook")
+
+    def _bot_says(self, http, headers, chat_id, text, **extra):
+        resp = http.post(
+            f"/bot{self.TOKEN}/sendMessage",
+            headers=headers,
+            json={"chat_id": chat_id, "text": text, **extra},
+        )
+        return resp.json()["result"]["message_id"]
+
+    def _send(self, http, headers, **body):
+        return http.post(
+            "/api/v1/test/send_update",
+            headers=headers,
+            params={"bot_token": self.TOKEN},
+            json=body,
+        )
+
+    def test_reply_to_bot_message(self, http, headers, session_id):
+        first = self._bot_says(http, headers, 1, "first answer")
+        self._bot_says(http, headers, 1, "second answer")
+
+        # message_id из /responses — то, на что ссылаются тесты
+        responses = http.get(
+            "/api/v1/test/responses", headers=headers, params={"session_id": session_id}
+        ).json()["responses"]
+        assert responses[0]["message_id"] == first
+
+        resp = self._send(http, headers, chat_id=1, text="follow-up", reply_to_message_id=first)
+        assert resp.status_code == 200, resp.text
+        reply = resp.json()["update"]["message"]["reply_to_message"]
+        assert reply["message_id"] == first
+        assert reply["text"] == "first answer"
+        assert reply["from"]["is_bot"] is True
+        assert reply["chat"]["id"] == 1
+        assert "date" in reply
+
+    def test_reply_strips_reply_keyboard(self, http, headers):
+        """В Message Telegram отдаёт только inline reply_markup (иначе aiogram не распарсит)."""
+        mid = self._bot_says(
+            http, headers, 1, "menu", reply_markup={"keyboard": [[{"text": "A"}]]}
+        )
+        resp = self._send(http, headers, chat_id=1, text="x", reply_to_message_id=mid)
+        assert "reply_markup" not in resp.json()["update"]["message"]["reply_to_message"]
+
+    def test_reply_with_photo(self, http, headers):
+        mid = self._bot_says(http, headers, 1, "answer")
+        resp = self._send(
+            http, headers, chat_id=1, photo_file_id="fake-photo-id",
+            photo_caption="look", reply_to_message_id=mid,
+        )
+        message = resp.json()["update"]["message"]
+        assert message["reply_to_message"]["message_id"] == mid
+        assert message["caption"] == "look"
+
+    def test_unknown_message_returns_404(self, http, headers):
+        resp = self._send(http, headers, chat_id=1, text="x", reply_to_message_id=424242)
+        assert resp.status_code == 404
+        assert "424242" in resp.json()["detail"]["error"]
+
+    def test_other_chat_message_returns_404(self, http, headers):
+        mid = self._bot_says(http, headers, 1, "answer")
+        resp = self._send(http, headers, chat_id=2, text="x", reply_to_message_id=mid)
+        assert resp.status_code == 404
+
+    def test_without_reply_has_no_reply_to_message(self, http, headers):
+        resp = self._send(http, headers, chat_id=1, text="plain")
+        assert "reply_to_message" not in resp.json()["update"]["message"]
+
+    def test_client_send_message_reply(self, http, headers, server_url, api_key, session_id):
+        from telemelya.client.client import TelegramTestClient
+
+        mid = self._bot_says(http, headers, 1, "answer")
+        with TelegramTestClient(server_url, api_key, self.TOKEN, session_id) as client:
+            payload = client.send_message(1, "follow-up", reply_to_message_id=mid)
+        assert payload["update"]["message"]["reply_to_message"]["message_id"] == mid
